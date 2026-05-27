@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000/api/assignments';
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/assignments`;
 
 export interface CreateAssignmentPayload {
   title: string;

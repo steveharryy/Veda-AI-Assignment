@@ -20,7 +20,7 @@ export const useAssignmentSocket = (assignmentId: string | null) => {
     console.log(`🔌 [WebSockets Hook] Connecting to backend server for Assignment: ${assignmentId}`);
     
     // Connect to WebSockets port 5000
-    const socket = io('http://localhost:5000');
+    const socket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000');
     socketRef.current = socket;
 
     // Join room specifically for this assignment
