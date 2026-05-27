@@ -72,7 +72,7 @@ Create a `.env` file in the `backend/` directory based on the provided `backend/
 
 ```env
 PORT=5000
-MONGO_URI=mongodb://localhost:27017/veda-ai
+MONGO_URI=your-mongodb-uri
 REDIS_HOST=your-redis-host-endpoint
 REDIS_PORT=your-redis-port
 REDIS_PASSWORD=your-redis-password
