@@ -1,113 +1,215 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useAssignmentStore, TabType } from '../store/useAssignmentStore';
+import { Sidebar } from '../components/Sidebar';
+import { Navbar } from '../components/Navbar';
+import { EmptyState } from '../components/EmptyState';
+import { AssignmentsList } from '../components/AssignmentsList';
+import { CreateAssignmentWizard } from '../components/CreateAssignmentWizard';
+import { QuestionPaperView } from '../components/QuestionPaperView';
+import { CardGridSkeleton } from '../components/LoadingSkeleton';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  TrendingUp, 
+  Users, 
+  Award, 
+  CalendarDays, 
+  Clock, 
+  ChevronRight, 
+  Sparkles,
+  BookOpen,
+  PieChart as ChartIcon
+} from 'lucide-react';
 
 export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+  const { 
+    activeTab, 
+    setActiveTab, 
+    assignments, 
+    wizardStep, 
+    setWizardStep, 
+    resetWizardForm,
+    isSkeletonLoading,
+    setIsSkeletonLoading
+  } = useAssignmentStore();
+
+  const [inWizardFlow, setInWizardFlow] = useState(false);
+
+  // Trigger brief skeletons when tab changes to simulate data loading
+  useEffect(() => {
+    setIsSkeletonLoading(true);
+    const timer = setTimeout(() => {
+      setIsSkeletonLoading(false);
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [activeTab, inWizardFlow, setIsSkeletonLoading]);
+
+  const handleStartWizard = () => {
+    resetWizardForm();
+    setInWizardFlow(true);
+    setActiveTab('assignments');
+  };
+
+  const handleCompleteWizard = () => {
+    setInWizardFlow(false);
+    setActiveTab('toolkit'); // Automatically navigate to the AI Generated Paper view
+  };
+
+  const handleCancelWizard = () => {
+    setInWizardFlow(false);
+    setWizardStep(1);
+  };
+
+  const handleViewPaperDirectly = () => {
+    setInWizardFlow(false);
+    setActiveTab('toolkit');
+  };
+
+  const handleBackToAssignments = () => {
+    setInWizardFlow(false);
+    setWizardStep(1);
+    setActiveTab('assignments');
+  };
+
+  // Render content based on activeTab and flow
+  const renderMainContent = () => {
+    if (isSkeletonLoading) {
+      return (
+        <div className="w-full py-8">
+          <CardGridSkeleton />
         </div>
-      </div>
+      );
+    }
 
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
+    if (activeTab === 'assignments') {
+      if (inWizardFlow) {
+        return (
+          <CreateAssignmentWizard 
+            onComplete={handleCompleteWizard} 
+            onCancel={handleCancelWizard} 
+          />
+        );
+      }
+      
+      if (assignments.length === 0) {
+        return <EmptyState onStartWizard={handleStartWizard} />;
+      }
+      
+      return (
+        <AssignmentsList 
+          onStartWizard={handleStartWizard} 
+          onViewPaper={handleViewPaperDirectly} 
         />
+      );
+    }
+
+    if (activeTab === 'toolkit') {
+      return <QuestionPaperView onBack={handleBackToAssignments} />;
+    }
+
+    // Dynamic premium mock views for other tabs to make dashboard complete and stunning
+    return renderMockTabContent();
+  };
+
+  // Helper to render premium placeholders for non-primary tabs
+  const renderMockTabContent = () => {
+    const title = activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col gap-6 w-full"
+      >
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">{title === 'Groups' ? 'My Groups' : title === 'Library' ? 'My Library' : title}</h1>
+          <p className="text-neutral-500 text-[13px] mt-0.5">Explore real-time telemetry, reports, and AI analytics.</p>
+        </div>
+
+        {/* Analytics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+          <div className="bg-white rounded-[24px] p-6 border border-neutral-100 shadow-sm card-shadow flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-600">
+              <TrendingUp className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="text-[12px] font-bold text-neutral-400 uppercase tracking-wider block">Average Grade</span>
+              <span className="text-2xl font-black text-neutral-800">A- (88%)</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-[24px] p-6 border border-neutral-100 shadow-sm card-shadow flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-sky-50 flex items-center justify-center text-sky-600">
+              <Users className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="text-[12px] font-bold text-neutral-400 uppercase tracking-wider block">Active Students</span>
+              <span className="text-2xl font-black text-neutral-800">142 Pupils</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-[24px] p-6 border border-neutral-100 shadow-sm card-shadow flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+              <Award className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="text-[12px] font-bold text-neutral-400 uppercase tracking-wider block">Assessments Run</span>
+              <span className="text-2xl font-black text-neutral-800">18 Papers</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Under construction graphics card */}
+        <div className="bg-white rounded-[24px] p-8 border border-neutral-100 card-shadow flex flex-col items-center justify-center min-h-[300px] text-center">
+          <div className="w-14 h-14 rounded-2xl bg-neutral-50 flex items-center justify-center border border-neutral-200/60 shadow-inner mb-4">
+            <Sparkles className="w-6 h-6 text-orange-500" />
+          </div>
+          <h2 className="text-lg font-bold text-neutral-800">VedaAI {title} Matrix</h2>
+          <p className="text-sm text-neutral-500 max-w-sm mt-2 leading-relaxed">
+            This module is currently collecting assessment criteria. Start generating questions in the Assignments tab to populate analytics graphs!
+          </p>
+          <button
+            onClick={handleStartWizard}
+            className="mt-6 h-[44px] px-6 rounded-full bg-black hover:bg-neutral-800 text-white font-semibold text-xs transition-colors active:scale-95 shadow"
+          >
+            Create New Assessment
+          </button>
+        </div>
+      </motion.div>
+    );
+  };
+
+  return (
+    <div className="flex p-3 gap-6 h-screen w-screen overflow-hidden">
+      {/* Sidebar fixed on Left */}
+      <Sidebar onStartWizard={handleStartWizard} />
+
+      {/* Main content scrollable on Right */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden select-none">
+        
+        {/* Top Navbar */}
+        <Navbar 
+          showBack={inWizardFlow} 
+          onBack={handleCancelWizard} 
+        />
+        
+        {/* Scrollable Canvas Container */}
+        <main className="flex-1 overflow-y-auto px-2 py-4 no-scrollbar">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab + (inWizardFlow ? '-wizard' : '')}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25 }}
+              className="w-full max-w-6xl mx-auto"
+            >
+              {renderMainContent()}
+            </motion.div>
+          </AnimatePresence>
+        </main>
       </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </div>
   );
 }
